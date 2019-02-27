@@ -7,8 +7,6 @@ echo Container Registry name $regname
 echo Cluster Name $clustername
 
 test=$(az group show -g $resourcegroup --output tsv)
-#test="[]"
-echo Found $test
 
 #if no resource group was found, build it
 if [ -z "$test" ]
