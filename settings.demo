@@ -1,0 +1,6 @@
+resourceGroup=AKSdemo
+regName=ACRegistryZA
+clusterName=AKSClusterZA
+keyVaultName=VaultZA
+locationName=westeurope
+

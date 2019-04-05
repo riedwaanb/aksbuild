@@ -1,0 +1,56 @@
+#!bin/bash
+
+# Build Key Vault, Container Registry, AKS Service Automatically
+
+# Needs JQ to be installed
+type jq >/dev/null 2>&1 || { echo >&2 "I require jq (https://stedolan.github.io/jq) but it's not installed. Aborting."; exit 1; }
+
+resourceGroup=$(grep -Po "(?<=^resourceGroup=).*" settings.demo)
+regName=$(grep -Po "(?<=^regName=).*" settings.demo)
+clusterName=$(grep -Po "(?<=^clusterName=).*" settings.demo)
+keyVaultName=$(grep -Po "(?<=^keyVaultName=).*" settings.demo)
+locationName=$(grep -Po "(?<=^locationName=).*" settings.demo)
+
+echo Resource Group $resourceGroup
+echo Container Registry $regName
+echo Cluster Name $clusterName
+echo Location $locationName 
+echo Vault $keyVaultName
+
+test=$(az group show -g $resourceGroup --output tsv)
+#test="[]"
+
+#if resource group was found, abort
+type $test >/dev/null 2>&1 || { echo >&2 "Resource group was found. Aborting."; exit 1; }
+
+echo Creating Resource Group $resourceGroup
+az group create -g $resourceGroup -l $locationName
+
+echo Creating Key Vault
+az keyvault create --name $keyVaultName -g $resourceGroup -l $locationName  
+  
+echo Creating Service Principle
+adSP=$(az ad sp create-for-rbac -n http://AKSClusterZA --skip-assignment -o json)
+
+appID=$(echo $adSP | jq -r '.appId')
+appPW=$(echo $adSP | jq -r '.password')
+  
+echo Saving spID $appID and spPW $appPW to key vault $keyVaultName
+az keyvault secret set --vault-name $keyVaultName --name "spID" --value $appID
+az keyvault secret set --vault-name $keyVaultName --name "spPW" --value $appPW
+
+echo Building a container registry
+az acr create --resource-group $resourceGroup --name $regName --sku Basic
+acrid=$(az acr show --name $regName --resource-group $resourceGroup --query "id" --output tsv)
+ 
+echo Doing Container Registry role assignment $appID --- $acrid
+az role assignment create --assignee $appID --scope $acrid --role acrpull
+  
+echo Building AKS Cluster $clustername
+az aks create --resource-group $resourceGroup --name $clusterName --node-count 1 --service-principal $appID --client-secret $appPW --generate-ssh-keys
+az aks get-credentials --resource-group $resourceGroup --name $clusterName
+  
+kubectl get nodes
+
+echo Done
+
