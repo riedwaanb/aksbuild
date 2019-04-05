@@ -20,12 +20,12 @@ echo
 
 if [ $ans = "y" ] 
 then
-	appID=$(az keyvault secret show --name "spID" --vault-name $keyVaultName -o tsv)
+	appID=$(az keyvault secret show --name "spID" --vault-name $keyVaultName --query "value" -o tsv)
 
 	echo Deleting Service Principle $appID
 	az ad sp delete --id $appID
 
 	echo Deleting Resource Group $resourceGroup 
-	# az group delete -n $resourceGroup --yes
+	az group delete -n $resourceGroup --yes
 fi
 
