@@ -2,7 +2,8 @@
 These shell scripts are used to quickly build an Container Registry, Key Vault, service principle, AKS cluster - and remove them just as quickly. Perfect for building and destroying a cluster for testing and demos. 
 
 ## Usage
-- Edit the ````settings.json```` file to match the settings your require.
+- Edit the ````settings.json```` file to match the settings your require. 
+- For security reasons **DO NOT** use the default settings provided.
 - To build a cluster execute ````aks_deploy```` by either making it executable or with a ````sh aks_deploy```` command.
 - To remove a cluster that was previously deployed execute ````aks_remove```` similarly.
 
