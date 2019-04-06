@@ -5,17 +5,17 @@
 # Needs JQ to be installed
 type jq >/dev/null 2>&1 || { echo >&2 "I require jq (https://stedolan.github.io/jq) but it's not installed. Aborting."; exit 1; }
 
-resourceGroup=$(grep -Po "(?<=^resourceGroup=).*" settings.demo)
-regName=$(grep -Po "(?<=^regName=).*" settings.demo)
-clusterName=$(grep -Po "(?<=^clusterName=).*" settings.demo)
-keyVaultName=$(grep -Po "(?<=^keyVaultName=).*" settings.demo)
-locationName=$(grep -Po "(?<=^locationName=).*" settings.demo)
+resourceGroup=$(jq -r '.resourceGroup' settings.json)
+regName=$(jq -r '.regName' settings.json)
+clusterName=$(jq -r '.clusterName' settings.json)
+keyVaultName=$(jq -r '.keyVaultName' settings.json)
+locationName=$(jq -r '.locationName' settings.json)
 
 echo Resource Group $resourceGroup
 echo Container Registry $regName
 echo Cluster Name $clusterName
-echo Location $locationName 
 echo Vault $keyVaultName
+echo Location $locationName 
 
 test=$(az group show -g $resourceGroup --output tsv)
 #test="[]"

@@ -1,0 +1,8 @@
+{
+	"resourceGroup": "AKSrg91",
+	"regName": "myACRegistry91",
+	"clusterName": "myAKSCluster91",
+	"keyVaultName": "myVault91",
+        "locationName": "westeurope"
+}
+

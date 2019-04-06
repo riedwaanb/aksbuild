@@ -1,30 +1,37 @@
 #!bin/bash
 
+# Needs JQ to be installed
+type jq >/dev/null 2>&1 || { echo >&2 "I require jq (https://stedolan.github.io/jq) but it's not installed. Aborting."; exit 1; }
+
+echo "Removing AKS deployment"
+echo "======================="
+
 # Pull settings from settings.demo
-resourceGroup=$(grep -Po "(?<=^resourceGroup=).*" settings.demo)
-regName=$(grep -Po "(?<=^regName=).*" settings.demo)
-clusterName=$(grep -Po "(?<=^clusterName=).*" settings.demo)
-keyVaultName=$(grep -Po "(?<=^keyVaultName=).*" settings.demo)
-locationName=$(grep -Po "(?<=^locationName=).*" settings.demo)
+resourceGroup=$(jq -r '.resourceGroup' settings.json)
+keyVaultName=$(jq -r '.keyVaultName' settings.json)
 
 echo Resource Group $resourceGroup
-echo Container Registry $regName
-echo Cluster Name $clusterName
-echo Location $locationName 
 echo Vault $keyVaultName
 
-az group show -g $resourceGroup -o table
+# Test to see if the resource group exists
+test=$(az group show -g $resourceGroup --output tsv)
 
+#if resource group was found, abort
+type $test >/dev/null 2>&1 && { echo >&2 "Aborting."; exit 1; }
+
+echo About to remove $resourceGroup
 read -p "Are you sure? [y/n] " ans
 echo
 
 if [ $ans = "y" ] 
 then
+	# Grab the Service Principle ID from the keyvault
 	appID=$(az keyvault secret show --name "spID" --vault-name $keyVaultName --query "value" -o tsv)
 
 	echo Deleting Service Principle $appID
 	az ad sp delete --id $appID
 
+	# Remove the Vault, Container Registry, AKS Cluster by removing the resource group
 	echo Deleting Resource Group $resourceGroup 
 	az group delete -n $resourceGroup --yes
 fi
