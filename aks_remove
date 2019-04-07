@@ -34,5 +34,8 @@ then
 	# Remove the Vault, Container Registry, AKS Cluster by removing the resource group
 	echo Deleting Resource Group $resourceGroup 
 	az group delete -n $resourceGroup --yes
+
+	echo Removing ~/.kube
+	rm -d -r ~/.kube
 fi
 

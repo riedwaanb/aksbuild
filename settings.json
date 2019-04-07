@@ -1,8 +1,8 @@
 {
-	"resourceGroup": "AKSrg91",
-	"regName": "myACRegistry91",
-	"clusterName": "myAKSCluster91",
-	"keyVaultName": "myVault91",
+	"resourceGroup": "AKSdemo",
+	"regName": "ACRegistryZA",
+	"clusterName": "AKSClusterZA",
+	"keyVaultName": "VaultZA",
         "locationName": "westeurope"
 }
 
