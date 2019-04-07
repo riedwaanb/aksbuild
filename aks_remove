@@ -9,9 +9,11 @@ echo "======================="
 # Pull settings from settings.demo
 resourceGroup=$(jq -r '.resourceGroup' settings.json)
 keyVaultName=$(jq -r '.keyVaultName' settings.json)
+clusterName=$(jq -r '.clusterName' settings.json)
 
 echo Resource Group $resourceGroup
 echo Vault $keyVaultName
+echo ClusterName $clusterName
 
 # Test to see if the resource group exists
 test=$(az group show -g $resourceGroup --output tsv)
@@ -35,7 +37,8 @@ then
 	echo Deleting Resource Group $resourceGroup 
 	az group delete -n $resourceGroup --yes
 
-	echo Removing ~/.kube
-	rm -d -r ~/.kube
+	echo Removing $clusterName from .kube config
+	kubectl config delete-cluster $clusterName
+	kubectl config delete-context $clusterName
 fi
 
