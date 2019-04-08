@@ -48,7 +48,7 @@ az role assignment create --assignee $appID --scope $acrid --role acrpull
   
 echo Building AKS Cluster $clustername
 az aks create --resource-group $resourceGroup --name $clusterName --node-count 1 --service-principal $appID --client-secret $appPW --generate-ssh-keys
-az aks get-credentials --resource-group $resourceGroup --name $clusterName
+az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing
   
 kubectl get nodes
 
