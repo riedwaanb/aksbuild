@@ -19,6 +19,5 @@ These shell scripts are used to quickly build an Container Registry, Key Vault, 
 ## The ````aks_remove```` script will remove
 1. The AD Service Principle
 2. The Resource Group containing everything we previously deployed.
-3. The cluster name from the .kube config 
 
 >The AD Service Principle ID is retrieved from the Key Vault we deployed.
