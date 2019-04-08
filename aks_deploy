@@ -10,10 +10,12 @@ regName=$(jq -r '.regName' settings.json)
 clusterName=$(jq -r '.clusterName' settings.json)
 keyVaultName=$(jq -r '.keyVaultName' settings.json)
 locationName=$(jq -r '.locationName' settings.json)
+clusterNodes=$(jq -r '.clusterNodes' settings.json)
 
 echo Resource Group $resourceGroup
 echo Container Registry $regName
 echo Cluster Name $clusterName
+echo Cluster Nodes $clusterNodes
 echo Vault $keyVaultName
 echo Location $locationName 
 
@@ -47,7 +49,7 @@ echo Doing Container Registry role assignment $appID --- $acrid
 az role assignment create --assignee $appID --scope $acrid --role acrpull
   
 echo Building AKS Cluster $clustername
-az aks create --resource-group $resourceGroup --name $clusterName --node-count 1 --service-principal $appID --client-secret $appPW --generate-ssh-keys
+az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys
 az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing
   
 kubectl get nodes

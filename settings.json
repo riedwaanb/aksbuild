@@ -3,5 +3,6 @@
 	"regName": "myACRegistry91",
 	"clusterName": "myAKSCluster91",
 	"keyVaultName": "myVault91",
-        "locationName": "westeurope"
+        "locationName": "westeurope",
+	"clusterNodes": "2"
 }
