@@ -34,11 +34,7 @@ then
 	az ad sp delete --id $appID
 
 	# Remove the Vault, Container Registry, AKS Cluster by removing the resource group
-	echo Deleting Resource Group $resourceGroup 
+	echo Deleting Resource Group $resourceGroup
 	az group delete -n $resourceGroup --yes
-
-	echo Removing $clusterName from .kube config
-	kubectl config delete-cluster $clusterName
-	kubectl config delete-context $clusterName
 fi
 
