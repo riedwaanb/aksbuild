@@ -20,7 +20,6 @@ echo Vault $keyVaultName
 echo Location $locationName 
 
 test=$(az group show -g $resourceGroup --output tsv)
-#test="[]"
 
 #if resource group was found, abort
 type $test >/dev/null 2>&1 || { echo >&2 "Resource group was found. Aborting."; exit 1; }
@@ -32,7 +31,7 @@ echo Creating Key Vault
 az keyvault create --name $keyVaultName -g $resourceGroup -l $locationName  
   
 echo Creating Service Principle
-adSP=$(az ad sp create-for-rbac -n http://AKSClusterZA --skip-assignment -o json)
+adSP=$(az ad sp create-for-rbac -n http://$clusterName --skip-assignment -o json)
 
 appID=$(echo $adSP | jq -r '.appId')
 appPW=$(echo $adSP | jq -r '.password')
