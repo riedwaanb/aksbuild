@@ -49,8 +49,13 @@ az role assignment create --assignee $appID --scope $acrid --role acrpull
   
 echo Building AKS Cluster $clustername
 az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys
+
+echo Getting Access Credentials
 az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing
-  
+
+echo Setting up rights to the Dashboard
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+
 kubectl get nodes
 
 echo Done
