@@ -11,52 +11,65 @@ clusterName=$(jq -r '.clusterName' settings.json)
 keyVaultName=$(jq -r '.keyVaultName' settings.json)
 locationName=$(jq -r '.locationName' settings.json)
 clusterNodes=$(jq -r '.clusterNodes' settings.json)
+fileShareName=$(jq -r '.fileShareName' settings.json)
+kubeSecretName=$(jq -r '.kubeSecretName' settings.json)
 
-echo Resource Group $resourceGroup
-echo Container Registry $regName
-echo Cluster Name $clusterName
-echo Cluster Nodes $clusterNodes
-echo Vault $keyVaultName
-echo Location $locationName 
+storageAccountName=akstore$(head /dev/urandom | tr -dc a-z0-9 | head -c10)
 
+echo "Testing to see if resource group $resourceGroup exits ..."
 test=$(az group show -g $resourceGroup --output tsv)
 
 #if resource group was found, abort
 type $test >/dev/null 2>&1 || { echo >&2 "Resource group was found. Aborting."; exit 1; }
+echo "Good to continue ..."
+echo "AKS Cluster Name     : $clusterName"
+echo "Resource Group Name  : $resourceGroup"
+echo "Region Location      : $locationName"
+echo "Number of Nodes      : $clusterNodes"
+echo "Container Registry   : $regName"
+echo "Key Vault Name       : $keyVaultName"
+echo "File Share Name      : $fileShareName"
+echo "Kubernetes Secret    : $kubeSecretName\n"
 
-echo Creating Resource Group $resourceGroup
-az group create -g $resourceGroup -l $locationName
+echo "Creating Resource Group $resourceGroup ..."
+az group create -g $resourceGroup -l $locationName > /dev/null
 
-echo Creating Key Vault
-az keyvault create --name $keyVaultName -g $resourceGroup -l $locationName  
+echo "Creating Key Vault ..."
+az keyvault create --name $keyVaultName -g $resourceGroup -l $locationName > /dev/null
   
-echo Creating Service Principle
+echo "Creating Service Principle ..."
 adSP=$(az ad sp create-for-rbac -n http://$clusterName --skip-assignment -o json)
+type $adSP >/dev/null 2>&1 && { echo >&2 "Aborting."; exit 1; }
 
 appID=$(echo $adSP | jq -r '.appId')
 appPW=$(echo $adSP | jq -r '.password')
-  
-echo Saving spID $appID and spPW $appPW to key vault $keyVaultName
-az keyvault secret set --vault-name $keyVaultName --name "spID" --value $appID
-az keyvault secret set --vault-name $keyVaultName --name "spPW" --value $appPW
 
-echo Building a container registry
-az acr create --resource-group $resourceGroup --name $regName --sku Basic
+echo "Storing Service Principle ID (spID) and Password (spPW) to key vault $keyVaultName ..."
+
+az keyvault secret set --vault-name $keyVaultName --name "spID" --value $appID > /dev/null
+az keyvault secret set --vault-name $keyVaultName --name "spPW" --value $appPW > /dev/null
+
+echo "Building a container registry $regName ..."
+az acr create --resource-group $resourceGroup --name $regName --sku Basic > /dev/null
 acrid=$(az acr show --name $regName --resource-group $resourceGroup --query "id" --output tsv)
  
-echo Doing Container Registry role assignment $appID --- $acrid
-az role assignment create --assignee $appID --scope $acrid --role acrpull
-  
-echo Building AKS Cluster $clustername
-az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys
+echo "Doing Container Registry role assignment ..."
+az role assignment create --assignee $appID --scope $acrid --role acrpull > /dev/null
 
-echo Getting Access Credentials
-az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing
+echo "Building AKS Cluster $clusterName (this will take a while) ..."
 
-echo Setting up rights to the Dashboard
-kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys > /dev/null
+
+echo "Getting Access Credentials ..."
+az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing > /dev/null
+
+echo "Setting up rights to the Dashboard ..."
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard > /dev/null
+
+echo "Done. Here is your Cluster :\n"
 
 kubectl get nodes
 
-echo Done
+echo "\nTo merge kubectl credentials on another machine run:"
+echo "az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing\n"  
 
