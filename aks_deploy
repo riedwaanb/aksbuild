@@ -1,4 +1,4 @@
-#!bin/bash
+#!bin/sh
 
 # Build Key Vault, Container Registry, AKS Service Automatically
 
@@ -11,8 +11,6 @@ clusterName=$(jq -r '.clusterName' settings.json)
 keyVaultName=$(jq -r '.keyVaultName' settings.json)
 locationName=$(jq -r '.locationName' settings.json)
 clusterNodes=$(jq -r '.clusterNodes' settings.json)
-fileShareName=$(jq -r '.fileShareName' settings.json)
-kubeSecretName=$(jq -r '.kubeSecretName' settings.json)
 
 storageAccountName=akstore$(head /dev/urandom | tr -dc a-z0-9 | head -c10)
 
@@ -28,8 +26,6 @@ echo "Region Location      : $locationName"
 echo "Number of Nodes      : $clusterNodes"
 echo "Container Registry   : $regName"
 echo "Key Vault Name       : $keyVaultName"
-echo "File Share Name      : $fileShareName"
-echo "Kubernetes Secret    : $kubeSecretName\n"
 
 echo "Creating Resource Group $resourceGroup ..."
 az group create -g $resourceGroup -l $locationName > /dev/null
@@ -57,14 +53,17 @@ echo "Doing Container Registry role assignment ..."
 az role assignment create --assignee $appID --scope $acrid --role acrpull > /dev/null
 
 echo "Building AKS Cluster $clusterName (this will take a while) ..."
-
-az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys > /dev/null
+# Note: we enable add-ons for http_application_routing and monitoring
+az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys --enable-addons http_application_routing,monitoring  > /dev/null
 
 echo "Getting Access Credentials ..."
 az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing > /dev/null
 
 echo "Setting up rights to the Dashboard ..."
 kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard > /dev/null
+
+# If helm is found install tiller 
+type helm >/dev/null 2>&1 && { echo >&2 "Helm detected, installing tiller in RBAC-enabled Cluster"; kubectl apply -f helm-rbac.yaml; helm init --service-account tiller; }
 
 echo "Done. Here is your Cluster :\n"
 
