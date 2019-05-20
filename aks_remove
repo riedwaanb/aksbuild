@@ -33,7 +33,6 @@ then
 
 	# Remove the Vault, Container Registry, AKS Cluster by removing the resource group
 	echo Deleting Resource Group $resourceGroup
-	az group delete -n $resourceGroup --yes --no-wait > /dev/null
-	echo Resource Group is deleting, but we are not waiting.
+	az group delete -n $resourceGroup --yes > /dev/null
 fi
 
