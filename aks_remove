@@ -27,12 +27,14 @@ if [ $ans = "y" ]
 then
 	# Grab the Service Principle ID from the keyvault
 	appID=$(az keyvault secret show --name "spID" --vault-name $keyVaultName --query "value" -o tsv)
+	# issue with the vault, exit
+	type $appID >/dev/null 2>&1 && { echo >&2 "Aborting."; exit 1; }
 
 	echo Deleting Service Principle $appID
 	az ad sp delete --id $appID > /dev/null
 
 	# Remove the Vault, Container Registry, AKS Cluster by removing the resource group
-	echo Deleting Resource Group $resourceGroup
-	az group delete -n $resourceGroup --yes > /dev/null
+	echo Deleting Resource Group $resourceGroup, but we are not waiting.
+	az group delete -n $resourceGroup --yes --no-wait > /dev/null
 fi
 
