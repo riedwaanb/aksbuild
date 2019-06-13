@@ -5,14 +5,16 @@
 # Needs JQ to be installed
 type jq >/dev/null 2>&1 || { echo >&2 "I require jq (https://stedolan.github.io/jq) but it's not installed. Aborting."; exit 1; }
 
+# Needs kubectl to be installed
+type kubectl >/dev/null  2>&1 || { echo >&2 "Kubectl is not installed. Installing it now..."; sudo az aks install-cli; }
+
 resourceGroup=$(jq -r '.resourceGroup' settings.json)
 regName=$(jq -r '.regName' settings.json)
 clusterName=$(jq -r '.clusterName' settings.json)
 keyVaultName=$(jq -r '.keyVaultName' settings.json)
 locationName=$(jq -r '.locationName' settings.json)
 clusterNodes=$(jq -r '.clusterNodes' settings.json)
-
-storageAccountName=akstore$(head /dev/urandom | tr -dc a-z0-9 | head -c10)
+nodeVMSize=$(jq -r '.nodeVMSize' settings.json)
 
 echo "Testing to see if resource group $resourceGroup exits ..."
 test=$(az group show -g $resourceGroup --output tsv)
@@ -24,6 +26,7 @@ echo "AKS Cluster Name     : $clusterName"
 echo "Resource Group Name  : $resourceGroup"
 echo "Region Location      : $locationName"
 echo "Number of Nodes      : $clusterNodes"
+echo "Node VM Size         : $nodeVMSize"
 echo "Container Registry   : $regName"
 echo "Key Vault Name       : $keyVaultName"
 
@@ -54,7 +57,7 @@ az role assignment create --assignee $appID --scope $acrid --role acrpull > /dev
 
 echo "Building AKS Cluster $clusterName (this will take a while) ..."
 # Note: we enable add-ons for http_application_routing and monitoring
-az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --service-principal $appID --client-secret $appPW --generate-ssh-keys --enable-addons http_application_routing,monitoring  > /dev/null
+az aks create --resource-group $resourceGroup --name $clusterName --node-count $clusterNodes --node-vm-size $nodeVMSize --service-principal $appID --client-secret $appPW --enable-addons http_application_routing,monitoring  > /dev/null
 
 echo "Getting Access Credentials ..."
 az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing > /dev/null
@@ -71,4 +74,3 @@ kubectl get nodes
 
 echo "\nTo merge kubectl credentials on another machine run:"
 echo "az aks get-credentials --resource-group $resourceGroup --name $clusterName --overwrite-existing\n"  
-
